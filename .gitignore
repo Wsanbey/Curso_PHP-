@@ -1,0 +1,24 @@
+# PHP TESTE - Git Ignore
+
+# Personal files (don't commit)
+meucurriculo.md
+Aula.md
+guia_rapido.md
+
+# System files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Temporary
+*.tmp
+*.temp
