@@ -3,188 +3,377 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PHP Interview Prep</title>
+    <title>PHP Interview Prep — Plataforma de Estudos</title>
+    <meta name="description" content="Plataforma interativa para preparação de entrevistas técnicas PHP. Quiz, conteúdo de estudo e acompanhamento de progresso.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">PHP Interview Prep</div>
-            <nav class="nav">
-                <button class="nav-btn active" data-view="quiz">Quiz</button>
-                <button class="nav-btn" data-view="estudo">Estudo</button>
-                <button class="nav-btn" data-view="historico">Histórico</button>
-            </nav>
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon"><i data-lucide="code-2"></i></div>
+                <span class="logo-text">PHP Prep</span>
+            </div>
+            <button class="sidebar-close" id="sidebar-close" aria-label="Fechar menu">
+                <i data-lucide="x"></i>
+            </button>
         </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-item active" data-view="dashboard">
+                <i data-lucide="layout-dashboard"></i>
+                <span>Dashboard</span>
+            </button>
+            <button class="nav-item" data-view="estudo">
+                <i data-lucide="book-open"></i>
+                <span>Estudar</span>
+            </button>
+            <button class="nav-item" data-view="quiz-config">
+                <i data-lucide="play-circle"></i>
+                <span>Novo Quiz</span>
+            </button>
+            <button class="nav-item" data-view="historico">
+                <i data-lucide="bar-chart-3"></i>
+                <span>Histórico</span>
+            </button>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="sidebar-badge">
+                <i data-lucide="sparkles"></i>
+                <span>IA em breve</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MOBILE HEADER -->
+    <header class="mobile-header" id="mobile-header">
+        <button class="menu-btn" id="menu-btn" aria-label="Abrir menu">
+            <i data-lucide="menu"></i>
+        </button>
+        <div class="logo logo-mobile">
+            <div class="logo-icon logo-icon-sm"><i data-lucide="code-2"></i></div>
+            <span class="logo-text">PHP Prep</span>
+        </div>
+        <div class="mobile-spacer"></div>
     </header>
 
-    <main class="main">
+    <!-- MAIN CONTENT -->
+    <main class="main" id="main-content">
 
-        <!-- ==================== TELA INICIO ==================== -->
-        <section id="view-inicio" class="view">
-            <div class="hero">
-                <h1 class="hero-title">Prepare-se para a Entrevista</h1>
-                <p class="hero-sub">Quiz interativo + Conteúdo de estudo + Acompanhamento de progresso</p>
+        <!-- ==================== DASHBOARD ==================== -->
+        <section id="view-dashboard" class="view active">
+            <div class="view-header">
+                <div>
+                    <h1 class="view-title">Dashboard</h1>
+                    <p class="view-subtitle">Acompanhe seu progresso nos estudos</p>
+                </div>
             </div>
 
-            <div class="config-card">
-                <h2 class="config-title">Configurar Quiz</h2>
-
-                <div class="config-group">
-                    <label class="config-label">Categorias</label>
-                    <div class="category-grid" id="category-grid"></div>
-                </div>
-
-                <div class="config-row">
-                    <div class="config-group config-half">
-                        <label class="config-label">Limite de questões</label>
-                        <select id="question-limit" class="select">
-                            <option value="0">Todas</option>
-                            <option value="5">5 questões</option>
-                            <option value="10" selected>10 questões</option>
-                            <option value="15">15 questões</option>
-                            <option value="20">20 questões</option>
-                            <option value="30">30 questões</option>
-                        </select>
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-card-icon" style="background: var(--primary-light); color: var(--primary);">
+                        <i data-lucide="target"></i>
                     </div>
-                    <div class="config-group config-half">
-                        <label class="config-label">Ordem</label>
-                        <select id="question-order" class="select">
-                            <option value="random">Aleatória</option>
-                            <option value="sequential">Sequencial</option>
-                        </select>
+                    <div class="stat-card-info">
+                        <span class="stat-card-value" id="dash-total">0</span>
+                        <span class="stat-card-label">Questões respondidas</span>
                     </div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon" style="background: var(--success-light); color: var(--success);">
+                        <i data-lucide="check-circle"></i>
+                    </div>
+                    <div class="stat-card-info">
+                        <span class="stat-card-value" id="dash-correct">0%</span>
+                        <span class="stat-card-label">Taxa de acerto</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon" style="background: var(--warning-light); color: var(--warning);">
+                        <i data-lucide="flame"></i>
+                    </div>
+                    <div class="stat-card-info">
+                        <span class="stat-card-value" id="dash-streak">0</span>
+                        <span class="stat-card-label">Melhor sequência</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card-icon" style="background: var(--error-light); color: var(--error);">
+                        <i data-lucide="repeat"></i>
+                    </div>
+                    <div class="stat-card-info">
+                        <span class="stat-card-value" id="dash-attempts">0</span>
+                        <span class="stat-card-label">Tentativas</span>
+                    </div>
+                </div>
+            </div>
 
-                <button class="btn btn-primary" onclick="startQuiz()">Iniciar Quiz</button>
+            <!-- Continue Studying -->
+            <div class="continue-card" id="continue-card" style="display:none;">
+                <div class="continue-info">
+                    <span class="continue-badge">Continuar de onde parou</span>
+                    <h3 class="continue-title" id="continue-title"></h3>
+                    <p class="continue-sub" id="continue-sub"></p>
+                </div>
+                <button class="btn btn-primary" onclick="resumeQuiz()">
+                    <i data-lucide="play"></i> Retomar
+                </button>
+            </div>
+
+            <!-- Categories -->
+            <div class="section-header">
+                <h2 class="section-title">Categorias</h2>
+                <p class="section-sub">Selecione um tópico para estudar</p>
+            </div>
+            <div class="category-grid" id="category-grid"></div>
+
+            <!-- IA Banner -->
+            <div class="ai-banner">
+                <div class="ai-banner-content">
+                    <div class="ai-banner-icon">
+                        <i data-lucide="sparkles"></i>
+                    </div>
+                    <div class="ai-banner-text">
+                        <h3>IA Integrada em Breve</h3>
+                        <p>Chat com IA, questões personalizadas e análise de desempenho. Você escolhe o provedor: OpenAI, Claude, Groq ou Ollama (gratuito).</p>
+                    </div>
+                </div>
+                <div class="ai-badge">v2.0</div>
+            </div>
+        </section>
+
+        <!-- ==================== QUIZ CONFIG ==================== -->
+        <section id="view-quiz-config" class="view" style="display:none;">
+            <div class="view-header">
+                <div>
+                    <h1 class="view-title">Novo Quiz</h1>
+                    <p class="view-subtitle">Configure e inicie seus estudos</p>
+                </div>
+            </div>
+
+            <div class="config-panel">
+                <div class="config-section">
+                    <h3 class="config-section-title">Categorias</h3>
+                    <div class="config-categories" id="config-categories"></div>
+                </div>
+
+                <div class="config-section">
+                    <h3 class="config-section-title">Configurações</h3>
+                    <div class="config-row">
+                        <div class="config-field">
+                            <label class="config-label">Limite de questões</label>
+                            <select id="question-limit" class="select">
+                                <option value="0">Todas</option>
+                                <option value="5">5 questões</option>
+                                <option value="10" selected>10 questões</option>
+                                <option value="15">15 questões</option>
+                                <option value="20">20 questões</option>
+                                <option value="30">30 questões</option>
+                            </select>
+                        </div>
+                        <div class="config-field">
+                            <label class="config-label">Ordem</label>
+                            <select id="question-order" class="select">
+                                <option value="random">Aleatória</option>
+                                <option value="sequential">Sequencial</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-lg" onclick="startQuiz()">
+                    <i data-lucide="play"></i> Iniciar Quiz
+                </button>
 
                 <div id="resume-banner" class="resume-banner" style="display:none;">
                     <div class="resume-info">
-                        <span class="resume-icon">▶</span>
+                        <i data-lucide="play-circle"></i>
                         <span>Quiz em andamento: <strong id="resume-progress"></strong></span>
                     </div>
-                    <div class="resume-buttons">
-                        <button class="btn btn-sm btn-outline" onclick="clearProgress()">Cancelar</button>
-                        <button class="btn btn-sm btn-primary" onclick="resumeQuiz()">Retomar</button>
+                    <div class="resume-actions">
+                        <button class="btn btn-ghost btn-sm" onclick="clearProgress()">Cancelar</button>
+                        <button class="btn btn-primary btn-sm" onclick="resumeQuiz()">Retomar</button>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- ==================== TELA QUIZ ==================== -->
+        <!-- ==================== QUIZ ==================== -->
         <section id="view-quiz" class="view" style="display:none;">
-            <div class="quiz-top">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progress-fill"></div>
+            <div class="quiz-container">
+                <div class="quiz-header">
+                    <div class="quiz-progress-info">
+                        <span class="quiz-counter">
+                            <span id="q-current">1</span> de <span id="q-total">10</span>
+                        </span>
+                        <span class="quiz-category-badge" id="q-category"></span>
+                    </div>
+                    <div class="progress-bar progress-bar-lg">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <div class="quiz-live-stats">
+                        <span class="live-stat live-stat-correct">
+                            <i data-lucide="check" style="width:14px;height:14px;"></i>
+                            <span id="q-correct">0</span>
+                        </span>
+                        <span class="live-stat live-stat-wrong">
+                            <i data-lucide="x" style="width:14px;height:14px;"></i>
+                            <span id="q-wrong">0</span>
+                        </span>
+                        <span class="live-stat live-stat-streak">
+                            <i data-lucide="flame" style="width:14px;height:14px;"></i>
+                            <span id="q-streak">0</span>
+                        </span>
+                    </div>
                 </div>
-                <div class="quiz-stats">
-                    <span class="stat"><span class="stat-dot stat-correct"></span> <span id="q-correct">0</span></span>
-                    <span class="stat"><span class="stat-dot stat-wrong"></span> <span id="q-wrong">0</span></span>
-                    <span class="stat"><span class="stat-dot stat-streak"></span> <span id="q-streak">0</span></span>
-                    <span class="stat stat-counter"><span id="q-current">1</span>/<span id="q-total">10</span></span>
-                </div>
-            </div>
 
-            <div class="question-card" id="question-card">
-                <div class="question-header">
-                    <span class="question-category" id="q-category"></span>
+                <div class="question-card" id="question-card">
+                    <p class="question-text" id="q-text"></p>
+                    <div class="options" id="q-options"></div>
                 </div>
-                <p class="question-text" id="q-text"></p>
-                <div class="options" id="q-options"></div>
+
                 <div class="explanation" id="q-explanation">
-                    <div class="exp-title">💡 Explicação</div>
-                    <div class="exp-text" id="exp-text"></div>
-                    <div class="exp-tip" id="exp-tip"></div>
+                    <div class="explanation-header">
+                        <i data-lucide="lightbulb"></i>
+                        <span>Por que?</span>
+                    </div>
+                    <div class="explanation-body">
+                        <p class="explanation-text" id="exp-text"></p>
+                        <div class="explanation-tip" id="exp-tip"></div>
+                    </div>
                 </div>
-            </div>
 
-            <div class="quiz-nav">
-                <button class="btn btn-outline" onclick="exitQuiz()">Sair</button>
-                <button class="btn btn-primary" id="btn-next" onclick="nextQuestion()" disabled>Próxima</button>
+                <div class="quiz-nav">
+                    <button class="btn btn-ghost" onclick="exitQuiz()">
+                        <i data-lucide="arrow-left"></i> Sair
+                    </button>
+                    <button class="btn btn-primary" id="btn-next" onclick="nextQuestion()" disabled>
+                        Próxima <i data-lucide="arrow-right"></i>
+                    </button>
+                </div>
             </div>
         </section>
 
-        <!-- ==================== TELA RESULTADO ==================== -->
+        <!-- ==================== RESULTADO ==================== -->
         <section id="view-resultado" class="view" style="display:none;">
-            <div class="result-card">
-                <div class="result-circle" id="result-circle">
-                    <span class="result-percent" id="res-percent">0%</span>
-                    <span class="result-sub">acertos</span>
-                </div>
-                <h2 class="result-msg" id="res-msg"></h2>
-                <p class="result-subtitle" id="res-sub"></p>
-
-                <div class="result-grid">
-                    <div class="result-item">
-                        <span class="result-value" id="res-total">0</span>
-                        <span class="result-label">Total</span>
+            <div class="result-container">
+                <div class="result-hero">
+                    <div class="result-circle" id="result-circle">
+                        <span class="result-percent" id="res-percent">0%</span>
                     </div>
-                    <div class="result-item result-item-correct">
-                        <span class="result-value" id="res-correct">0</span>
-                        <span class="result-label">Acertos</span>
-                    </div>
-                    <div class="result-item result-item-wrong">
-                        <span class="result-value" id="res-wrong">0</span>
-                        <span class="result-label">Erros</span>
-                    </div>
-                    <div class="result-item">
-                        <span class="result-value" id="res-streak">0</span>
-                        <span class="result-label">Sequência</span>
-                    </div>
+                    <h2 class="result-msg" id="res-msg"></h2>
+                    <p class="result-subtitle" id="res-sub"></p>
                 </div>
 
-                <div class="result-categories" id="res-categories"></div>
+                <div class="result-stats">
+                    <div class="result-stat">
+                        <span class="result-stat-value" id="res-total">0</span>
+                        <span class="result-stat-label">Total</span>
+                    </div>
+                    <div class="result-stat result-stat-correct">
+                        <span class="result-stat-value" id="res-correct">0</span>
+                        <span class="result-stat-label">Acertos</span>
+                    </div>
+                    <div class="result-stat result-stat-wrong">
+                        <span class="result-stat-value" id="res-wrong">0</span>
+                        <span class="result-stat-label">Erros</span>
+                    </div>
+                    <div class="result-stat">
+                        <span class="result-stat-value" id="res-streak">0</span>
+                        <span class="result-stat-label">Sequência</span>
+                    </div>
+                </div>
 
-                <div class="result-buttons">
-                    <button class="btn btn-outline" onclick="showView('inicio')">Início</button>
-                    <button class="btn btn-primary" onclick="startQuiz()">Tentar Novamente</button>
+                <div class="result-breakdown" id="res-categories"></div>
+
+                <div class="result-actions">
+                    <button class="btn btn-ghost" onclick="showView('dashboard')">
+                        <i data-lucide="layout-dashboard"></i> Dashboard
+                    </button>
+                    <button class="btn btn-primary" onclick="startQuiz()">
+                        <i data-lucide="refresh-cw"></i> Tentar Novamente
+                    </button>
                 </div>
             </div>
         </section>
 
-        <!-- ==================== TELA ESTUDO ==================== -->
+        <!-- ==================== ESTUDO ==================== -->
         <section id="view-estudo" class="view" style="display:none;">
-            <div class="section-header">
-                <h2>Conteúdo de Estudo</h2>
-                <p class="section-sub">Revise os tópicos antes de responder as questões</p>
+            <div class="view-header">
+                <div>
+                    <h1 class="view-title">Estudar</h1>
+                    <p class="view-subtitle">Revise os tópicos antes de responder as questões</p>
+                </div>
             </div>
 
             <div class="study-filters">
-                <button class="filter-btn active" data-filter="all">Todos</button>
-                <button class="filter-btn" data-filter="php-basico">PHP Básico</button>
-                <button class="filter-btn" data-filter="pdo">PDO / MySQL</button>
-                <button class="filter-btn" data-filter="rest">API REST</button>
-                <button class="filter-btn" data-filter="laravel">Laravel</button>
-                <button class="filter-btn" data-filter="sql">SQL</button>
-                <button class="filter-btn" data-filter="dicas">Dicas</button>
+                <button class="filter-chip active" data-filter="all">Todos</button>
+                <button class="filter-chip" data-filter="php-basico">PHP Básico</button>
+                <button class="filter-chip" data-filter="pdo">PDO / MySQL</button>
+                <button class="filter-chip" data-filter="rest">API REST</button>
+                <button class="filter-chip" data-filter="laravel">Laravel</button>
+                <button class="filter-chip" data-filter="sql">SQL</button>
+                <button class="filter-chip" data-filter="dicas">Dicas</button>
             </div>
 
             <div id="study-content" class="study-content"></div>
         </section>
 
-        <!-- ==================== TELA HISTORICO ==================== -->
+        <!-- ==================== HISTORICO ==================== -->
         <section id="view-historico" class="view" style="display:none;">
-            <div class="section-header">
-                <h2>Histórico de Tentativas</h2>
-                <p class="section-sub">Acompanhe sua evolução ao longo do tempo</p>
+            <div class="view-header">
+                <div>
+                    <h1 class="view-title">Histórico</h1>
+                    <p class="view-subtitle">Acompanhe sua evolução ao longo do tempo</p>
+                </div>
             </div>
 
             <div class="history-summary" id="history-summary"></div>
 
             <div class="history-list" id="history-list"></div>
 
-            <div id="history-empty" class="history-empty" style="display:none;">
-                <div class="empty-icon">📋</div>
-                <p>Nenhuma tentativa ainda</p>
-                <p class="empty-sub">Faça seu primeiro quiz para ver o histórico aqui</p>
+            <div id="history-empty" class="empty-state" style="display:none;">
+                <div class="empty-icon"><i data-lucide="inbox"></i></div>
+                <h3>Nenhuma tentativa ainda</h3>
+                <p>Faça seu primeiro quiz para ver o histórico aqui</p>
             </div>
 
-            <button class="btn btn-outline" id="btn-clear-history" onclick="clearHistory()" style="display:none; margin-top:1rem;">
-                Limpar Histórico
+            <button class="btn btn-ghost btn-danger" id="btn-clear-history" onclick="clearHistory()" style="display:none;">
+                <i data-lucide="trash-2"></i> Limpar Histórico
             </button>
         </section>
 
     </main>
+
+    <!-- MOBILE BOTTOM NAV -->
+    <nav class="bottom-nav" id="bottom-nav">
+        <button class="bottom-nav-item active" data-view="dashboard">
+            <i data-lucide="layout-dashboard"></i>
+            <span>Home</span>
+        </button>
+        <button class="bottom-nav-item" data-view="estudo">
+            <i data-lucide="book-open"></i>
+            <span>Estudar</span>
+        </button>
+        <button class="bottom-nav-item" data-view="quiz-config">
+            <i data-lucide="play-circle"></i>
+            <span>Quiz</span>
+        </button>
+        <button class="bottom-nav-item" data-view="historico">
+            <i data-lucide="bar-chart-3"></i>
+            <span>Histórico</span>
+        </button>
+    </nav>
+
+    <!-- OVERLAY -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <script src="data.js"></script>
     <script src="study.js"></script>

@@ -1,12 +1,12 @@
 // ============================================================
-// APP.JS - Lógica Principal
+// APP.JS — PHP Interview Prep
 // ============================================================
 
 // ============================================================
-// ESTADO
+// STATE
 // ============================================================
 let state = {
-    currentView: 'inicio',
+    currentView: 'dashboard',
     quiz: {
         active: false,
         questions: [],
@@ -27,11 +27,21 @@ let state = {
 };
 
 // ============================================================
-// PERSISTÊNCIA (localStorage)
+// PERSISTENCE
 // ============================================================
 function saveState() {
     const toSave = {
-        quiz: state.quiz,
+        quiz: {
+            active: state.quiz.active,
+            questions: state.quiz.questions,
+            currentIndex: state.quiz.currentIndex,
+            answers: state.quiz.answers,
+            correct: state.quiz.correct,
+            wrong: state.quiz.wrong,
+            streak: state.quiz.streak,
+            maxStreak: state.quiz.maxStreak,
+            config: state.quiz.config
+        },
         history: state.history
     };
     localStorage.setItem('php-quiz-state', JSON.stringify(toSave));
@@ -45,7 +55,7 @@ function loadState() {
             if (parsed.history) state.history = parsed.history;
             if (parsed.quiz) {
                 state.quiz.config = { ...state.quiz.config, ...parsed.quiz.config };
-                if (parsed.quiz.active && parsed.quiz.currentIndex < parsed.quiz.questions.length) {
+                if (parsed.quiz.active && parsed.quiz.questions && parsed.quiz.currentIndex < parsed.quiz.questions.length) {
                     state.quiz.active = parsed.quiz.active;
                     state.quiz.questions = parsed.quiz.questions;
                     state.quiz.currentIndex = parsed.quiz.currentIndex;
@@ -63,23 +73,34 @@ function loadState() {
 }
 
 // ============================================================
-// INICIALIZAÇÃO
+// INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
     loadState();
+    lucide.createIcons();
+    setupNavigation();
+    setupSidebar();
     renderCategories();
+    renderConfigCategories();
     renderStudyContent();
-    renderHistory();
+    renderDashboard();
     checkResume();
-    setupNav();
     setupStudyFilters();
 });
 
 // ============================================================
-// NAVEGAÇÃO
+// NAVIGATION
 // ============================================================
-function setupNav() {
-    document.querySelectorAll('.nav-btn').forEach(btn => {
+function setupNavigation() {
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const view = btn.dataset.view;
+            showView(view);
+            closeSidebar();
+        });
+    });
+
+    document.querySelectorAll('.bottom-nav-item').forEach(btn => {
         btn.addEventListener('click', () => {
             const view = btn.dataset.view;
             showView(view);
@@ -90,37 +111,124 @@ function setupNav() {
 function showView(view) {
     state.currentView = view;
 
-    document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-    document.getElementById(`view-${view}`).style.display = 'block';
+    document.querySelectorAll('.view').forEach(v => {
+        v.style.display = 'none';
+        v.classList.remove('active');
+    });
 
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`.nav-btn[data-view="${view}"]`).classList.add('active');
+    const target = document.getElementById(`view-${view}`);
+    if (target) {
+        target.style.display = 'block';
+        target.classList.add('active');
+    }
 
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.nav-item[data-view="${view}"]`)?.classList.add('active');
+
+    document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.bottom-nav-item[data-view="${view}"]`)?.classList.add('active');
+
+    if (view === 'dashboard') renderDashboard();
     if (view === 'historico') renderHistory();
     if (view === 'estudo') renderStudyContent();
-    if (view === 'inicio') checkResume();
+    if (view === 'quiz-config') checkResume();
 
     window.scrollTo(0, 0);
 }
 
 // ============================================================
-// CATEGORIAS
+// SIDEBAR (Mobile)
+// ============================================================
+function setupSidebar() {
+    const menuBtn = document.getElementById('menu-btn');
+    const closeBtn = document.getElementById('sidebar-close');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    menuBtn?.addEventListener('click', openSidebar);
+    closeBtn?.addEventListener('click', closeSidebar);
+    overlay?.addEventListener('click', closeSidebar);
+}
+
+function openSidebar() {
+    document.getElementById('sidebar').classList.add('open');
+    document.getElementById('sidebar-overlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+    const totalAnswered = state.history.reduce((a, h) => a + h.total, 0);
+    const totalCorrect = state.history.reduce((a, h) => a + h.correct, 0);
+    const avgScore = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
+    const bestStreak = state.history.length > 0 ? Math.max(...state.history.map(h => h.maxStreak)) : 0;
+
+    document.getElementById('dash-total').textContent = totalAnswered;
+    document.getElementById('dash-correct').textContent = avgScore + '%';
+    document.getElementById('dash-streak').textContent = bestStreak;
+    document.getElementById('dash-attempts').textContent = state.history.length;
+
+    // Continue card
+    const continueCard = document.getElementById('continue-card');
+    if (state.quiz.active && state.quiz.currentIndex < state.quiz.questions.length) {
+        const pct = Math.round((state.quiz.currentIndex / state.quiz.questions.length) * 100);
+        document.getElementById('continue-title').textContent = `Quiz em andamento`;
+        document.getElementById('continue-sub').textContent = `${state.quiz.currentIndex}/${state.quiz.questions.length} questões (${pct}%)`;
+        continueCard.style.display = 'flex';
+    } else {
+        continueCard.style.display = 'none';
+    }
+
+    renderCategories();
+    lucide.createIcons();
+}
+
+// ============================================================
+// CATEGORIES
 // ============================================================
 function renderCategories() {
     const grid = document.getElementById('category-grid');
+    if (!grid) return;
     grid.innerHTML = '';
 
     Object.entries(CATEGORIES).forEach(([key, cat]) => {
-        const chip = document.createElement('div');
-        chip.className = 'category-chip' + (state.quiz.config.categories.includes(key) ? ' selected' : '');
-        chip.dataset.category = key;
-        chip.innerHTML = `<span class="chip-icon">${cat.icon}</span> ${cat.name}`;
-        chip.addEventListener('click', () => toggleCategory(key, chip));
-        grid.appendChild(chip);
+        const count = QUESTIONS.filter(q => q.category === key).length;
+        const card = document.createElement('div');
+        card.className = 'category-card';
+        card.innerHTML = `
+            <div class="category-card-icon">${cat.icon}</div>
+            <div class="category-card-name">${cat.name}</div>
+            <div class="category-card-count">${count} questões</div>`;
+        card.addEventListener('click', () => {
+            state.quiz.config.categories = [key];
+            showView('quiz-config');
+        });
+        grid.appendChild(card);
     });
 }
 
-function toggleCategory(key, chip) {
+function renderConfigCategories() {
+    const container = document.getElementById('config-categories');
+    if (!container) return;
+    container.innerHTML = '';
+
+    Object.entries(CATEGORIES).forEach(([key, cat]) => {
+        const chip = document.createElement('button');
+        chip.className = 'config-category-chip' + (state.quiz.config.categories.includes(key) ? ' selected' : '');
+        chip.innerHTML = `<span>${cat.icon}</span> ${cat.name}`;
+        chip.addEventListener('click', () => toggleConfigCategory(key, chip));
+        container.appendChild(chip);
+    });
+}
+
+function toggleConfigCategory(key, chip) {
     const cats = state.quiz.config.categories;
     const idx = cats.indexOf(key);
     if (idx > -1) {
@@ -143,14 +251,8 @@ function startQuiz() {
     state.quiz.config.order = order;
 
     let pool = QUESTIONS.filter(q => cats.includes(q.category));
-
-    if (order === 'random') {
-        pool = shuffle(pool);
-    }
-
-    if (limit > 0 && pool.length > limit) {
-        pool = pool.slice(0, limit);
-    }
+    if (order === 'random') pool = shuffle(pool);
+    if (limit > 0 && pool.length > limit) pool = pool.slice(0, limit);
 
     state.quiz.questions = pool;
     state.quiz.currentIndex = 0;
@@ -173,6 +275,7 @@ function resumeQuiz() {
 
 function checkResume() {
     const banner = document.getElementById('resume-banner');
+    if (!banner) return;
     if (state.quiz.active && state.quiz.currentIndex < state.quiz.questions.length) {
         const pct = Math.round((state.quiz.currentIndex / state.quiz.questions.length) * 100);
         document.getElementById('resume-progress').textContent =
@@ -200,9 +303,7 @@ function renderQuestion() {
     document.getElementById('q-wrong').textContent = state.quiz.wrong;
     document.getElementById('q-streak').textContent = state.quiz.streak;
 
-    const progress = (curr / total) * 100;
-    document.getElementById('progress-fill').style.width = `${progress}%`;
-
+    document.getElementById('progress-fill').style.width = `${(curr / total) * 100}%`;
     document.getElementById('q-category').textContent = CATEGORIES[q.category].name;
     document.getElementById('q-text').textContent = q.question;
 
@@ -212,21 +313,18 @@ function renderQuestion() {
     q.options.forEach((opt, i) => {
         const btn = document.createElement('div');
         btn.className = 'option';
-        btn.innerHTML = `<span class="option-letter">${String.fromCharCode(65 + i)})</span> ${opt}`;
+        btn.innerHTML = `<span class="option-letter">${String.fromCharCode(65 + i)}</span><span>${opt}</span>`;
         btn.addEventListener('click', () => selectOption(i));
         optionsDiv.appendChild(btn);
     });
 
     document.getElementById('q-explanation').classList.remove('show');
     document.getElementById('btn-next').disabled = true;
-    document.getElementById('btn-next').textContent =
-        curr < total - 1 ? 'Próxima →' : 'Ver Resultado';
+    document.getElementById('btn-next').innerHTML = curr < total - 1
+        ? 'Próxima <i data-lucide="arrow-right"></i>'
+        : 'Ver Resultado <i data-lucide="check"></i>';
 
-    document.getElementById('question-card').style.animation = 'none';
-    requestAnimationFrame(() => {
-        document.getElementById('question-card').style.animation = 'fadeIn 0.2s ease';
-    });
-
+    lucide.createIcons();
     saveState();
 }
 
@@ -267,7 +365,6 @@ function selectOption(index) {
 
 function nextQuestion() {
     state.quiz.currentIndex++;
-
     if (state.quiz.currentIndex >= state.quiz.questions.length) {
         finishQuiz();
     } else {
@@ -276,17 +373,14 @@ function nextQuestion() {
 }
 
 function exitQuiz() {
-    if (state.quiz.currentIndex < state.quiz.questions.length) {
-        saveState();
-    }
-    showView('inicio');
+    saveState();
+    showView('dashboard');
 }
 
 function finishQuiz() {
     const total = state.quiz.questions.length;
     const percent = Math.round((state.quiz.correct / total) * 100);
 
-    // Salvar no histórico
     const attempt = {
         id: Date.now(),
         date: new Date().toISOString(),
@@ -303,7 +397,6 @@ function finishQuiz() {
     state.quiz.active = false;
     saveState();
 
-    // Mostrar resultado
     document.getElementById('res-percent').textContent = `${percent}%`;
     document.getElementById('res-total').textContent = total;
     document.getElementById('res-correct').textContent = state.quiz.correct;
@@ -314,23 +407,22 @@ function finishQuiz() {
     circle.className = 'result-circle';
     if (percent >= 70) {
         circle.classList.add('excellent');
-        document.getElementById('res-msg').textContent = 'Excelente! Está pronto!';
-        document.getElementById('res-sub').textContent = 'Confiança alta pra call. Vai com tudo!';
+        document.getElementById('res-msg').textContent = 'Excelente!';
+        document.getElementById('res-sub').textContent = 'Você está pronto para a entrevista.';
     } else if (percent >= 50) {
         circle.classList.add('good');
         document.getElementById('res-msg').textContent = 'Bom progresso!';
-        document.getElementById('res-sub').textContent = 'Revise os tópicos que errou e refaça.';
+        document.getElementById('res-sub').textContent = 'Revise os tópicos e refaça.';
     } else {
         circle.classList.add('bad');
         document.getElementById('res-msg').textContent = 'Continue estudando!';
-        document.getElementById('res-sub').textContent = 'Revise o conteúdo de estudo e tente novamente.';
+        document.getElementById('res-sub').textContent = 'Revise o conteúdo e tente novamente.';
     }
 
-    // Resultado por categoria
     renderResultCategories();
-
     document.getElementById('progress-fill').style.width = '100%';
     showView('resultado');
+    lucide.createIcons();
 }
 
 function renderResultCategories() {
@@ -338,16 +430,12 @@ function renderResultCategories() {
     const catStats = {};
 
     state.quiz.questions.forEach((q, i) => {
-        if (!catStats[q.category]) {
-            catStats[q.category] = { total: 0, correct: 0 };
-        }
+        if (!catStats[q.category]) catStats[q.category] = { total: 0, correct: 0 };
         catStats[q.category].total++;
-        if (state.quiz.answers[i] === q.correct) {
-            catStats[q.category].correct++;
-        }
+        if (state.quiz.answers[i] === q.correct) catStats[q.category].correct++;
     });
 
-    let html = '<div style="font-weight:600; margin-bottom:0.5rem; font-size:0.85rem; color: var(--text-muted);">Por Categoria</div>';
+    let html = '<div style="font-weight:600; margin-bottom:0.5rem; font-size:0.82rem; color: var(--text-muted); text-transform:uppercase; letter-spacing:0.05em;">Por Categoria</div>';
 
     Object.entries(catStats).forEach(([cat, stats]) => {
         const pct = Math.round((stats.correct / stats.total) * 100);
@@ -366,7 +454,7 @@ function renderResultCategories() {
 }
 
 // ============================================================
-// HISTÓRICO
+// HISTORY
 // ============================================================
 function renderHistory() {
     const list = document.getElementById('history-list');
@@ -375,61 +463,63 @@ function renderHistory() {
     const btnClear = document.getElementById('btn-clear-history');
 
     if (state.history.length === 0) {
-        list.innerHTML = '';
-        summary.innerHTML = '';
-        empty.style.display = 'block';
-        btnClear.style.display = 'none';
+        if (list) list.innerHTML = '';
+        if (summary) summary.innerHTML = '';
+        if (empty) empty.style.display = 'block';
+        if (btnClear) btnClear.style.display = 'none';
         return;
     }
 
-    empty.style.display = 'none';
-    btnClear.style.display = 'block';
+    if (empty) empty.style.display = 'none';
+    if (btnClear) btnClear.style.display = 'block';
 
-    // Resumo
     const totalAttempts = state.history.length;
     const avgScore = Math.round(state.history.reduce((a, h) => a + h.percent, 0) / totalAttempts);
     const bestScore = Math.max(...state.history.map(h => h.percent));
     const lastScore = state.history[0].percent;
 
-    summary.innerHTML = `
-        <div class="summary-card">
-            <span class="summary-value">${totalAttempts}</span>
-            <span class="summary-label">Tentativas</span>
-        </div>
-        <div class="summary-card">
-            <span class="summary-value">${avgScore}%</span>
-            <span class="summary-label">Média</span>
-        </div>
-        <div class="summary-card">
-            <span class="summary-value">${bestScore}%</span>
-            <span class="summary-label">Melhor</span>
-        </div>
-        <div class="summary-card">
-            <span class="summary-value">${lastScore}%</span>
-            <span class="summary-label">Última</span>
-        </div>`;
-
-    // Lista
-    list.innerHTML = '';
-    state.history.forEach(h => {
-        const date = new Date(h.date);
-        const dateStr = date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        const catNames = h.categories.map(c => CATEGORIES[c]?.icon || '').join(' ');
-        const scoreClass = h.percent >= 70 ? 'excellent' : h.percent >= 50 ? 'good' : 'bad';
-
-        const item = document.createElement('div');
-        item.className = 'history-item';
-        item.innerHTML = `
-            <div class="history-item-left">
-                <span class="history-item-date">${dateStr}</span>
-                <span class="history-item-categories">${catNames}</span>
+    if (summary) {
+        summary.innerHTML = `
+            <div class="summary-card">
+                <span class="summary-value">${totalAttempts}</span>
+                <span class="summary-label">Tentativas</span>
             </div>
-            <div class="history-item-right">
-                <span class="history-score ${scoreClass}">${h.percent}%</span>
-                <span class="history-item-detail">${h.correct}/${h.total} acertos</span>
+            <div class="summary-card">
+                <span class="summary-value">${avgScore}%</span>
+                <span class="summary-label">Média</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-value">${bestScore}%</span>
+                <span class="summary-label">Melhor</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-value">${lastScore}%</span>
+                <span class="summary-label">Última</span>
             </div>`;
-        list.appendChild(item);
-    });
+    }
+
+    if (list) {
+        list.innerHTML = '';
+        state.history.forEach(h => {
+            const date = new Date(h.date);
+            const dateStr = date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const catNames = h.categories.map(c => CATEGORIES[c]?.icon || '').join(' ');
+            const scoreClass = h.percent >= 70 ? 'excellent' : h.percent >= 50 ? 'good' : 'bad';
+
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `
+                <div class="history-item-left">
+                    <span class="history-item-date">${dateStr}</span>
+                    <span class="history-item-categories">${catNames}</span>
+                </div>
+                <div class="history-item-right">
+                    <span class="history-score ${scoreClass}">${h.percent}%</span>
+                    <span class="history-item-detail">${h.correct}/${h.total} acertos</span>
+                </div>`;
+            list.appendChild(item);
+        });
+    }
 }
 
 function clearHistory() {
@@ -441,12 +531,12 @@ function clearHistory() {
 }
 
 // ============================================================
-// ESTUDO
+// STUDY
 // ============================================================
 function setupStudyFilters() {
-    document.querySelectorAll('.filter-btn').forEach(btn => {
+    document.querySelectorAll('.filter-chip').forEach(btn => {
         btn.addEventListener('click', () => {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             state.studyFilter = btn.dataset.filter;
             renderStudyContent();
@@ -456,12 +546,11 @@ function setupStudyFilters() {
 
 function renderStudyContent() {
     const container = document.getElementById('study-content');
-    const filter = state.studyFilter;
-
+    if (!container) return;
     container.innerHTML = '';
 
     Object.entries(STUDY_CONTENT).forEach(([key, content]) => {
-        if (filter !== 'all' && filter !== key) return;
+        if (state.studyFilter !== 'all' && state.studyFilter !== key) return;
 
         const card = document.createElement('div');
         card.className = 'study-card';
@@ -479,7 +568,7 @@ function renderStudyContent() {
         card.innerHTML = `
             <div class="study-card-header" onclick="this.parentElement.classList.toggle('open')">
                 <div class="study-card-title">
-                    <span class="cat-icon">${content.icon}</span>
+                    <span>${content.icon}</span>
                     ${content.title}
                 </div>
                 <span class="study-card-arrow">▼</span>
